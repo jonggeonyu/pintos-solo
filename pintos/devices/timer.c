@@ -87,14 +87,40 @@ timer_elapsed (int64_t then) {
 	return timer_ticks () - then;
 }
 
+// ! 함수 추가
+void
+thread_sleep (int64_t ticks) {
+	struct thread *cur = thread_current ();
+	enum intr_level old_level = intr_disable ();
+	cur->wakeup = ticks;
+	list_push_back (&sleep_list, &cur->elem);
+	thread_block ();
+	intr_set_level (old_level);
+}
+
+void
+thread_wake (void) {
+	struct list_elem *e = list_begin (&sleep_list);
+	while (e != list_end (&sleep_list)) {
+		struct thread *t = list_entry (e, struct thread, elem);
+		if (t->wakeup <= ticks) {
+			e = list_remove (e);
+			thread_unblock (t);
+		} else {
+			e = list_next (e);
+		}
+	}
+}
+
 /* Suspends execution for approximately TICKS timer ticks. */
 void
 timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks ();
-
 	ASSERT (intr_get_level () == INTR_ON);
-	while (timer_elapsed (start) < ticks)
-		thread_yield ();
+	if (ticks <= 0) {
+		return;
+	}
+	thread_sleep (start + ticks);
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -126,6 +152,7 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
+	thread_wake ();
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

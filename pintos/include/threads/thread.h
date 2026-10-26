@@ -92,6 +92,10 @@ struct thread {
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
 
+	// ! 멤버 변수 추가
+	int64_t wakeup;
+
+
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
 
@@ -113,6 +117,11 @@ struct thread {
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+
+// ! 추가
+extern struct list sleep_list;
+bool priority_cmp(const struct list_elem *a, const struct list_elem *b, void *aux);
+
 
 void thread_init (void);
 void thread_start (void);
