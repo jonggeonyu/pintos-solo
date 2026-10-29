@@ -92,9 +92,12 @@ struct thread {
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
 
-	// ! 멤버 변수 추가
+	// ! 멤버 변수 추가 -> 초기화
 	int64_t wakeup;
-
+	int64_t init_priority;
+	struct lock *wait_on_lock;
+	struct list donations;
+	struct list_elem donation_elem;
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
@@ -122,6 +125,11 @@ extern bool thread_mlfqs;
 extern struct list sleep_list;
 bool priority_cmp(const struct list_elem *a, const struct list_elem *b, void *aux);
 
+// ! added function for priority-donate
+void donate_priority (void);
+void remove_with_lock (struct lock *lock);
+void refresh_priority (void);
+bool thread_compare_donate_priority (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
 
 void thread_init (void);
 void thread_start (void);
