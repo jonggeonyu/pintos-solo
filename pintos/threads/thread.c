@@ -186,10 +186,16 @@ thread_print_stats (void) {
 // ! 함수 추가
 void 
 thread_preemption (void) {
-    if (!list_empty (&ready_list) && 
-    thread_current ()->priority < 
-    list_entry (list_front (&ready_list), struct thread, elem)->priority)
-        thread_yield ();
+    if (!list_empty (&ready_list) &&
+    thread_current ()->priority <
+    list_entry (list_front (&ready_list), struct thread, elem)->priority) {
+        /* An interrupt handler (e.g. the disk's sema_up) cannot yield
+           directly; yield when the handler returns instead. */
+        if (intr_context ())
+            intr_yield_on_return ();
+        else
+            thread_yield ();
+    }
 }
 
 tid_t
@@ -338,8 +344,8 @@ thread_yield (void) {
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->init_priority = new_priority;
-	thread_preemption ();
 	refresh_priority ();
+	thread_preemption ();
 }
 
 /* Returns the current thread's priority. */
@@ -422,7 +428,6 @@ kernel_thread (thread_func *function, void *aux) {
 	thread_exit ();       /* If function() returns, kill the thread. */
 }
 
-
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
@@ -442,6 +447,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->init_priority = priority;
 	t->wait_on_lock = NULL;
 	list_init (&t->donations);
+
+#ifdef USERPROG
+	t->exit_status = -1;
+	list_init (&t->children);
+#endif
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should

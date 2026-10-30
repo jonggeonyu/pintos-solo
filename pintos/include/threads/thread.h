@@ -105,6 +105,11 @@ struct thread {
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
+	int exit_status;                    /* Status passed to exit(). */
+	struct file **fdt;                  /* File descriptor table. */
+	struct file *running_file;          /* Executable, kept open to deny writes. */
+	struct list children;               /* child_status of each forked child. */
+	struct child_status *my_status;     /* Shared with the parent, or NULL. */
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
@@ -149,6 +154,7 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
+void thread_preemption (void);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
