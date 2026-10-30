@@ -189,8 +189,6 @@ thread_preemption (void) {
     if (!list_empty (&ready_list) &&
     thread_current ()->priority <
     list_entry (list_front (&ready_list), struct thread, elem)->priority) {
-        /* An interrupt handler (e.g. the disk's sema_up) cannot yield
-           directly; yield when the handler returns instead. */
         if (intr_context ())
             intr_yield_on_return ();
         else
